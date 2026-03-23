@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # 1. Frontend Container (Next.js)
+  frontend:
+    build: 
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api
+    ports:
+      - "3030:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+    networks:
+      - hakeem_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 2. Backend Container (Node.js API)
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - HOST=0.0.0.0
+      - MONGO_URI=mongodb://database:27017/hakeem_db
+      - JWT_SECRET=super_secret_key_for_admin
+      - FRONTEND_URL=http://localhost:3030
+    depends_on:
+      - database
+    networks:
+      - hakeem_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 3. Database Container (MongoDB)
+  database:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - hakeem_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# شبكة داخلية عشان الـ Containers تكلم بعضها بأمان
+networks:
+  hakeem_network:
+    driver: bridge
+
+# مساحة تخزين عشان الداتا ماتطيرش لما نقفل الـ Container
+volumes:
+  mongo_data:

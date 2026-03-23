@@ -1,0 +1,29 @@
+# Development Dockerfile for Next.js
+FROM node:20-alpine
+
+# Install dependencies only when needed
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Create .next directory if it doesn't exist
+RUN mkdir -p .next
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NEXT_PUBLIC_API_URL=http://backend:5000/api
+
+# Expose port
+EXPOSE 3000
+
+# Start the development server
+CMD ["npm", "run", "dev"]
